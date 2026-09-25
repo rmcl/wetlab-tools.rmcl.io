@@ -18,6 +18,8 @@ export interface AssayDetection {
   standardWells: string[]
   blankWells: string[]
   blankAverage: number
+  blankStandardDeviation: number
+  sampleThreshold: number
   sampleCount: number
   confidence: 'high' | 'medium' | 'low'
   message: string
@@ -34,6 +36,15 @@ function numeric(value: unknown): number | undefined {
 function standardDeviation(values: number[]) {
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length
   return Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length)
+}
+
+export function blankSampleThreshold(values: number[]) {
+  if (!values.length) return { mean: 0, standardDeviation: 0, threshold: 0 }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length
+  const standardDeviation = values.length < 2
+    ? 0
+    : Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1))
+  return { mean, standardDeviation, threshold: mean + 2 * standardDeviation }
 }
 
 export function findPlateCandidate(rows: unknown[][]): PlateCandidate | undefined {
@@ -135,17 +146,16 @@ export function detectAssayLayout(plate: Plate): AssayDetection {
   }
 
   const assigned = new Set([...standardWells, ...blankWells])
-  const blankAverage = blankWells.length
-    ? blankWells.reduce((sum, well) => {
-        const row = well.charCodeAt(0) - 65
-        const column = Number(well.slice(1)) - 1
-        return sum + plate[row][column]
-      }, 0) / blankWells.length
-    : 0
+  const blankValues = blankWells.map((well) => {
+    const row = well.charCodeAt(0) - 65
+    const column = Number(well.slice(1)) - 1
+    return plate[row][column]
+  })
+  const { mean: blankAverage, standardDeviation: blankStandardDeviation, threshold: sampleThreshold } = blankSampleThreshold(blankValues)
   let sampleCount = 0
   plate.forEach((values, row) => values.forEach((value, column) => {
     const well = wellName(row, column)
-    if (!assigned.has(well) && value > blankAverage) {
+    if (!assigned.has(well) && value > sampleThreshold) {
       definitions[well] = { role: 'sample', sampleName: well }
       sampleCount += 1
     }
@@ -153,7 +163,7 @@ export function detectAssayLayout(plate: Plate): AssayDetection {
 
   const confidence = !standardsAccepted ? 'low' : best!.score >= 88 ? 'high' : 'medium'
   const message = standardsAccepted
-    ? `Detected standards ${standardWells[0]}–${standardWells.at(-1)}, blanks ${blankWells.join(', ')} (mean ${blankAverage.toFixed(3)}), and ${sampleCount} above-blank sample wells.`
-    : `The plate was found, but no eight-well standards series was detected confidently. Wells above ${blankAverage.toFixed(3)} were labeled as samples for review.`
-  return { definitions, standardWells, blankWells, blankAverage, sampleCount, confidence, message }
+    ? `Detected standards ${standardWells[0]}–${standardWells.at(-1)}, blanks ${blankWells.join(', ')} (mean ${blankAverage.toFixed(3)}, SD ${blankStandardDeviation.toFixed(3)}), and ${sampleCount} wells above the ${sampleThreshold.toFixed(3)} sample threshold.`
+    : `The plate was found, but no eight-well standards series was detected confidently. Wells above the ${sampleThreshold.toFixed(3)} blank-noise threshold were labeled as samples for review.`
+  return { definitions, standardWells, blankWells, blankAverage, blankStandardDeviation, sampleThreshold, sampleCount, confidence, message }
 }

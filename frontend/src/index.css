@@ -47,7 +47,17 @@ button, input, select { font: inherit; }
 }
 
 @media print {
+  @page { size: landscape; margin: 10mm; }
   .no-print { display: none !important; }
   .app-background { background: white; }
+  body.report-open { background: white; }
+  body.report-open * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.report-open .bradford-page { max-width: none; padding: 0; }
+  body.report-open .bradford-page > :not(.report-view) { display: none !important; }
+  body.report-open .report-view { position: static !important; inset: auto !important; overflow: visible !important; padding: 0 !important; background: white !important; }
+  body.report-open .report-sheet { max-width: none !important; padding: 0 !important; box-shadow: none !important; }
+  body.report-open footer { display: none !important; }
+  .report-section { break-inside: auto; }
+  .plate-report-table { break-inside: avoid; }
+  .plot-container, .js-plotly-plot { break-inside: avoid; }
 }
-

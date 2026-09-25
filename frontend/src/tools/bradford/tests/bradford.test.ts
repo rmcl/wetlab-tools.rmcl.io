@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { analyzeBradford, evaluateCurve, fitQuadratic, wellToIndices } from '../calculations/bradford'
 import { createExample } from '../example'
-import { DEFAULT_STANDARD_CONCENTRATIONS, detectAssayLayout, findPlateCandidate } from '../calculations/autodetect'
+import { DEFAULT_STANDARD_CONCENTRATIONS, blankSampleThreshold, detectAssayLayout, findPlateCandidate } from '../calculations/autodetect'
 import { excelCellToIndices } from '../spreadsheet/parseWorkbook'
 import { deleteStoredBradfordRun, getStoredBradfordRun, listStoredBradfordRuns, saveStoredBradfordRun } from '../storage/localLibrary'
 
@@ -85,6 +85,14 @@ describe('Bradford calculations', () => {
     expect(detected.blankAverage).toBeCloseTo(0.05, 8)
     expect(detected.definitions.A1).toBeUndefined()
     expect(detected.definitions.C1).toEqual({ role: 'sample', sampleName: 'C1' })
+  })
+
+  it('uses blank mean plus two sample standard deviations as the sample threshold', () => {
+    const threshold = blankSampleThreshold([0.4, 0.41, 0.42])
+    expect(threshold.mean).toBeCloseTo(0.41, 8)
+    expect(threshold.standardDeviation).toBeCloseTo(0.01, 8)
+    expect(threshold.threshold).toBeCloseTo(0.43, 8)
+    expect(0.414).toBeLessThan(threshold.threshold)
   })
 
   it('stores, lists, restores, and deletes browser-local runs', () => {

@@ -5,7 +5,7 @@ import type { AnalysisResult } from '../types'
 
 const Plot = createPlotlyComponent(Plotly)
 
-export function CurveChart({ analysis }: { analysis: AnalysisResult }) {
+export function CurveChart({ analysis, report = false }: { analysis: AnalysisResult; report?: boolean }) {
   const { fit, standards, samples } = analysis
   const range = fit.maxAbsorbance - fit.minAbsorbance || 1
   const start = Math.min(0, fit.minAbsorbance - range * 0.08)
@@ -30,15 +30,15 @@ export function CurveChart({ analysis }: { analysis: AnalysisResult }) {
         },
       ]}
       layout={{
-        autosize: true, height: 420, margin: { l: 70, r: 24, t: 24, b: 64 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: '#fbfcfb',
+        autosize: true, height: report ? 360 : 420, margin: { l: 70, r: 24, t: 24, b: 64 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: '#fbfcfb',
         font: { family: 'Segoe UI, sans-serif', color: '#34423e' },
         xaxis: { title: { text: 'Absorbance (blank subtracted)' }, gridcolor: '#e3e9e6', zerolinecolor: '#b8c5c0' },
         yaxis: { title: { text: 'Concentration (µg/mL)' }, gridcolor: '#e3e9e6', rangemode: 'tozero' },
         legend: { orientation: 'h', y: -0.22 }, hovermode: 'closest',
       }}
-      config={{ responsive: true, displaylogo: false, toImageButtonOptions: { format: 'svg', filename: 'bradford-standard-curve' } }}
+      config={{ responsive: true, displaylogo: false, displayModeBar: report ? false : 'hover', toImageButtonOptions: { format: 'svg', filename: 'bradford-standard-curve' } }}
       useResizeHandler
-      className="h-[420px] w-full"
+      className={`${report ? 'h-[360px]' : 'h-[420px]'} w-full`}
     />
   )
 }

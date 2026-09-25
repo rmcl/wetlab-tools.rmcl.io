@@ -3,7 +3,7 @@ import {
 } from '@fluentui/react-components'
 import {
   ArrowReset20Regular, Beaker24Regular, CheckmarkCircle20Filled, DocumentArrowUp20Regular,
-  Info20Regular, Play20Filled, Table20Regular,
+  Info20Regular, Play20Filled, Print20Regular, Table20Regular,
 } from '@fluentui/react-icons'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { analyzeBradford } from './calculations/bradford'
@@ -12,6 +12,7 @@ import { CurveChart } from './components/CurveChart'
 import { PlateGrid } from './components/PlateGrid'
 import { ResultsTable } from './components/ResultsTable'
 import { SavedRuns } from './components/SavedRuns'
+import { ReportView } from './components/ReportView'
 import { createExample } from './example'
 import { detectAssayLayout, type AssayDetection } from './calculations/autodetect'
 import { autoDetectWorkbookPlate, parsePlate, readWorkbook, type WorkbookData } from './spreadsheet/parseWorkbook'
@@ -46,6 +47,7 @@ export function BradfordPage() {
   const [storedFileType, setStoredFileType] = useState('application/octet-stream')
   const [storedFileSize, setStoredFileSize] = useState(0)
   const [storageError, setStorageError] = useState<string>()
+  const [showReport, setShowReport] = useState(false)
 
   const analysisState = useMemo(() => {
     if (!plate) return { analysis: undefined, error: undefined }
@@ -186,7 +188,7 @@ export function BradfordPage() {
   }, [analysisState.analysis, counts.sample, currentStoredId, definitions, detection, origin, plate, sheetName, storedFileData, storedFilename, storedFileSize, storedFileType])
 
   return (
-    <div className="mx-auto max-w-[1500px] px-4 py-8 sm:px-7 sm:py-10">
+    <div className="bradford-page mx-auto max-w-[1500px] px-4 py-8 sm:px-7 sm:py-10">
       <section className="mb-7 flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div>
           <div className="mb-3 flex items-center gap-2 text-sm font-medium text-emerald-800"><Beaker24Regular /> Protein analysis</div>
@@ -205,7 +207,7 @@ export function BradfordPage() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end">
               <div className="flex-1">
                 <div className="mb-2 flex items-center gap-2"><DocumentArrowUp20Regular /><Text weight="semibold">1. Import and detect plate data</Text></div>
-                <p className="text-xs leading-5 text-slate-500">Excel and CSV files are read locally. The app finds the 8 × 12 plate, standards, blanks, and wells above the average blank automatically.</p>
+                <p className="text-xs leading-5 text-slate-500">Excel and CSV files are read locally. The app finds the plate, standards, blanks, and wells above the blank mean plus two standard deviations automatically.</p>
               </div>
               <input ref={fileInput} className="hidden" type="file" accept=".xlsx,.csv" onChange={(event) => loadFile(event.target.files?.[0])} />
               <Button appearance="primary" icon={<DocumentArrowUp20Regular />} onClick={() => fileInput.current?.click()}>{workbookData ? 'Choose another file' : 'Choose file'}</Button>
@@ -257,7 +259,10 @@ export function BradfordPage() {
             <Card appearance="filled" className="!rounded-2xl !border !border-emerald-950/10 !bg-white !p-5 shadow-[0_10px_30px_rgba(20,60,48,0.05)] sm:!p-6">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                 <div><Text weight="semibold" size={500}>3. Review the curve</Text><p className="mt-1 text-xs text-slate-500">Quadratic concentration-on-absorbance fit after subtracting the mean blank.</p></div>
-                <Badge appearance="tint" color={analysisState.analysis.fit.r2 >= 0.98 ? 'success' : 'warning'} icon={<CheckmarkCircle20Filled />}>R² {analysisState.analysis.fit.r2.toFixed(4)}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge appearance="tint" color={analysisState.analysis.fit.r2 >= 0.98 ? 'success' : 'warning'} icon={<CheckmarkCircle20Filled />}>R² {analysisState.analysis.fit.r2.toFixed(4)}</Badge>
+                  <Button icon={<Print20Regular />} onClick={() => setShowReport(true)}>Report / PDF</Button>
+                </div>
               </div>
               <CurveChart analysis={analysisState.analysis} />
               <Divider className="!my-5" />
@@ -286,6 +291,7 @@ export function BradfordPage() {
           {plate && !analysisState.analysis && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-5 text-amber-900"><strong>Analysis not ready.</strong><br />{analysisState.error}</div>}
         </div>
       </div>
+      {showReport && plate && analysisState.analysis && <ReportView analysis={analysisState.analysis} plate={plate} definitions={definitions} filename={storedFilename ?? workbookData?.name} onClose={() => setShowReport(false)} />}
     </div>
   )
 }
