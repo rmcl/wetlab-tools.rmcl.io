@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  color: #17211e;
+  background: #f4f7f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; min-height: 100%; background: #f4f7f5; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: #f4f7f5; }
+button, input, select { font: inherit; }
+
+.app-background {
+  background:
+    radial-gradient(circle at 8% -10%, rgba(27, 145, 119, 0.13), transparent 31rem),
+    radial-gradient(circle at 94% 3%, rgba(198, 143, 40, 0.10), transparent 26rem),
+    #f4f7f5;
+}
+
+.plate-scroll { scrollbar-color: #9badA6 transparent; }
+.plate-grid {
+  display: grid;
+  grid-template-columns: 28px repeat(12, minmax(54px, 1fr));
+  gap: 5px;
+  min-width: 760px;
+}
+
+.well {
+  min-height: 52px;
+  border: 1px solid rgba(34, 63, 55, 0.15);
+  border-radius: 10px;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.well:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(25, 65, 54, 0.10); }
+.well-selected { outline: 3px solid #0b8068; outline-offset: 1px; }
+.well-standard { border-bottom: 4px solid #2764d7; }
+.well-blank { border-bottom: 4px solid #68717a; }
+.well-sample { border-bottom: 4px solid #b45f06; }
+
+@media (max-width: 720px) {
+  .plate-grid { grid-template-columns: 24px repeat(12, 50px); gap: 4px; min-width: 680px; }
+  .well { min-height: 48px; border-radius: 8px; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .app-background { background: white; }
+}
+
